@@ -29,11 +29,11 @@ export class ProductController {
     }
 
     @Get('/:id')
-    detailProduct(): ResponseData<string>{
+    detailProduct(@Param('id') id: number): ResponseData<Product | undefined> {
         try {
-            return new ResponseData<string>(this.productService.detailProduct(), HttpStatus.SUCCESS, HttpMessage.SUCCESS);
+            return new ResponseData<Product | undefined>(this.productService.detailProduct(id), HttpStatus.SUCCESS, HttpMessage.SUCCESS);
         } catch (error) {
-            return new ResponseData<string>('', HttpStatus.ERROR, HttpMessage.ERROR);
+            return new ResponseData<Product>(null as any, HttpStatus.ERROR, HttpMessage.ERROR);
         }
     }
 
