@@ -1,16 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { AccountDto } from 'src/dto/account.dto';
 import { AccountEntity } from 'src/entities/account.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+
 
 @Injectable()
 export class AccountService {
     
     constructor(
         @InjectRepository(AccountEntity)
-        private readonly accountsRepository: Repository<AccountEntity>
+        private readonly accountsRepository: Repository<AccountEntity>,
+        private readonly jwtService: JwtService,
     ) {}
 
     async createAccount(accountDto: AccountDto): Promise<AccountEntity> {
@@ -40,5 +43,29 @@ export class AccountService {
     async deleteAccount(id: number): Promise<boolean> {
         const result = await this.accountsRepository.delete(id);
         return result.affected ? result.affected > 0 : false;
+    }
+
+    async login(loginDto: AccountDto): Promise<{ accessToken: string }> {
+        const { username, password } = loginDto;
+
+        // 1. Kiểm tra username có tồn tại trong DB không
+        const account = await this.accountsRepository.findOneBy({ username });
+        if (!account) {
+            throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác');
+        }
+
+        // 2. Kiểm tra và so sánh mật khẩu băm (bcrypt.compare)
+        const isPasswordMatched = await bcrypt.compare(password, account.password);
+        if (!isPasswordMatched) {
+            throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác');
+        }
+
+        // 3. Tạo Payload (nội dung bên trong token)
+        const payload = { id: account.id, username: account.username };
+
+        // 4. Ký và tạo chuỗi Access Token
+        const accessToken = this.jwtService.sign(payload);
+
+        return { accessToken };
     }
 }

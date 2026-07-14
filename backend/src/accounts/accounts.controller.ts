@@ -48,4 +48,20 @@ export class AccountController {
             return new ResponseData<boolean>(false, HttpStatus.ERROR, HttpMessage.ERROR);
         }
     }
+
+    @Post('/login')
+    async login(
+        @Body(new ValidationPipe({ whitelist: true })) loginDto: AccountDto
+    ): Promise<ResponseData<{ accessToken: string } | null>> {
+        try {
+            const data = await this.accountService.login(loginDto);
+            return new ResponseData<{ accessToken: string }>(data, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
+        } catch (error: any) {
+            return new ResponseData<null>(
+                null, 
+                HttpStatus.ERROR, 
+                error.message || 'Đăng nhập thất bại'
+            );
+        }
+    }
 }
