@@ -5,7 +5,7 @@ export class ProductsEntity extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @Column()
+    @Column({ unique: true })
     productName!: string;
 
     @Column()
@@ -13,4 +13,7 @@ export class ProductsEntity extends BaseEntity {
 
     @Column({ type: 'int' })
     price!: number;
+
+    @Column({ type: 'int' })
+    quantity!: number;
 }

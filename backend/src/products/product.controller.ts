@@ -19,7 +19,6 @@ export class ProductController {
         } catch (error) {
             return new ResponseData<ProductsEntity[]>([], HttpStatus.ERROR, HttpMessage.ERROR);
         }
-    
     }
 
     @Post()

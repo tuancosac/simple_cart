@@ -7,6 +7,7 @@ import { ProductsEntity } from './entities/products.entity';
 import { CategoriesEntity } from './entities/categories.entity';
 import { AccountEntity } from './entities/account.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AccountModule } from './accounts/accounts.module';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         synchronize: true,
       }),
     }),
-    ProductModule
+    ProductModule,
+    AccountModule
   ],
   controllers: [AppController],
   providers: [AppService],

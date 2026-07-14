@@ -11,6 +11,6 @@ export class AccountEntity extends BaseEntity {
     @Column()
     password!: string;
 
-    @Column()
-    permission!: string;
+    @Column({ unique: true })
+    email!: string;
 }
