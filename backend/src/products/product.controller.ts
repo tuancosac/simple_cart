@@ -1,8 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, ValidationPipe } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { ResponseData } from '../global/globalClass';
 import { HttpStatus, HttpMessage } from '../global/globalEnum';
-import { Product } from 'src/models/product.model';
+import { AuthGuard } from '@nestjs/passport';
 import { ProductDto } from 'src/dto/product.dto';
 import { ProductsEntity } from 'src/entities/products.entity';
 
@@ -12,6 +12,7 @@ export class ProductController {
     constructor(private readonly productService: ProductService) {}
 
     @Get()
+    @UseGuards(AuthGuard('jwt'))
     async getProducts(): Promise<ResponseData<ProductsEntity[]>> {
         try{
             const data = await this.productService.getProducts();
@@ -22,6 +23,7 @@ export class ProductController {
     }
 
     @Post()
+    @UseGuards(AuthGuard('jwt'))
     async createProduct(@Body(new ValidationPipe({ whitelist: true })) productDto: ProductDto): Promise<ResponseData<ProductsEntity | null >> {
         try {
             const data = await this.productService.createProduct(productDto);
@@ -32,6 +34,7 @@ export class ProductController {
     }
 
     @Get('/:id')
+    @UseGuards(AuthGuard('jwt'))
     async detailProduct(@Param('id') id: number): Promise<ResponseData<ProductsEntity | null>> {
         try {
             const data = await this.productService.detailProduct(Number(id));
@@ -42,6 +45,7 @@ export class ProductController {
     }
 
     @Put('/:id')
+    @UseGuards(AuthGuard('jwt'))
     async updateProduct(@Body() productDto: ProductDto, @Param('id') id: number): Promise<ResponseData<ProductsEntity | null>> {
         try {
             const data = await this.productService.updateProduct(Number(id), productDto);
@@ -52,6 +56,7 @@ export class ProductController {
     }
 
     @Delete('/:id')
+    @UseGuards(AuthGuard('jwt'))
     async deleteProduct(@Param("id") id: number): Promise<ResponseData<boolean>> {
         try {
             const result = await this.productService.deleteProduct(Number(id));

@@ -50,18 +50,14 @@ export class AccountController {
     }
 
     @Post('/login')
-    async login(
-        @Body(new ValidationPipe({ whitelist: true })) loginDto: AccountDto
-    ): Promise<ResponseData<{ accessToken: string } | null>> {
+    async login( @Body(new ValidationPipe({ whitelist: true })) loginDto: AccountDto ): Promise<ResponseData<{ accessToken: string } | null>> {
         try {
             const data = await this.accountService.login(loginDto);
             return new ResponseData<{ accessToken: string }>(data, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
         } catch (error: any) {
-            return new ResponseData<null>(
-                null, 
-                HttpStatus.ERROR, 
-                error.message || 'Đăng nhập thất bại'
-            );
+            const statusCode = error.status || HttpStatus.ERROR; 
+            const message = error.message || 'Đăng nhập thất bại';
+            return new ResponseData<null>(null, statusCode, message);
         }
     }
 }

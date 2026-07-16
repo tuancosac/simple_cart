@@ -36,7 +36,12 @@ export class AccountService {
         if (!accountExisted) {
             throw new NotFoundException(`Không tìm thấy tài khoản với ID: ${id}`);
         }
-        await this.accountsRepository.update(id, accountDto);
+        const updateData = { ...accountDto };
+        if (updateData.password) {
+            const salt = await bcrypt.genSalt();
+            updateData.password = await bcrypt.hash(updateData.password, salt);
+        }
+        await this.accountsRepository.update(id, updateData);
         return await this.detailAccount(id);
     }
 
