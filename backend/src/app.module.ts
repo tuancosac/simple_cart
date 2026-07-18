@@ -4,10 +4,11 @@ import { AppService } from './app.service';
 import { ProductModule } from './products/product.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductsEntity } from './entities/products.entity';
-import { CategoriesEntity } from './entities/categories.entity';
 import { AccountEntity } from './entities/account.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AccountModule } from './accounts/accounts.module';
+import { CartModule } from './cart/cart.module';
+import { CartEntity } from './entities/cart.entity';
 
 @Module({
   imports: [
@@ -24,12 +25,13 @@ import { AccountModule } from './accounts/accounts.module';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
-        entities: [AccountEntity, CategoriesEntity, ProductsEntity],
+        entities: [AccountEntity, ProductsEntity, CartEntity],
         synchronize: true,
       }),
     }),
     ProductModule,
-    AccountModule
+    AccountModule,
+    CartModule
   ],
   controllers: [AppController],
   providers: [AppService],
