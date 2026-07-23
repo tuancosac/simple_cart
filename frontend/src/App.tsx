@@ -4,9 +4,8 @@ import ProductCard from './components/ProductCard';
 import ProductModal from './components/ProductModal';
 import CartItem from './components/CartItem';
 import OrderSummary from './components/OrderSummary';
-import { Product, CartItem as CartItemType } from './types';
-import { defaultProducts } from './constants/products';
-import { loadFromStorage, saveToStorage } from './utils/storage';
+import { Product, CartItem as CartItemType } from './types/products';
+import { productApi, cartApi } from './services/api';
 
 const App: React.FC = () => {
   const [isAdminMode, setIsAdminMode] = useState(false);
@@ -15,75 +14,116 @@ const App: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'cart'>('home');
+  const [loading, setLoading] = useState(false);
 
+  // Load dữ liệu từ Backend
   useEffect(() => {
-    const { products: savedProducts, cart: savedCart } = loadFromStorage();
-    setProducts(savedProducts.length > 0 ? savedProducts : defaultProducts);
-    setCart(savedCart);
+    loadProducts();
+    loadCart();
   }, []);
 
-  useEffect(() => {
-    saveToStorage(products, cart);
-  }, [products, cart]);
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const res = await productApi.getAll();
+      setProducts(res.data);
+    } catch (error) {
+      console.error('Lỗi tải sản phẩm:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCart = async () => {
+    try {
+      const res = await cartApi.getCart();
+      setCart(res.data);
+    } catch (error) {
+      console.error('Lỗi tải giỏ hàng:', error);
+    }
+  };
 
   const toggleAdminMode = () => setIsAdminMode(!isAdminMode);
 
-  const openAddModal = () => { setEditingProduct(null); setIsModalOpen(true); };
+  const openAddModal = () => {
+    setEditingProduct(null);
+    setIsModalOpen(true);
+  };
+
   const openEditModal = (id: string) => {
     const p = products.find(x => x.id === id);
-    if (p) { setEditingProduct(p); setIsModalOpen(true); }
-  };
-
-  const handleProductSubmit = (data: Omit<Product, 'id'> & { id?: string }) => {
-    if (data.id) {
-      setProducts(prev => prev.map(p => p.id === data.id ? { ...p, ...data } : p));
-    } else {
-      const newProduct: Product = { ...data, id: Date.now().toString() };
-      setProducts(prev => [...prev, newProduct]);
+    if (p) {
+      setEditingProduct(p);
+      setIsModalOpen(true);
     }
   };
 
-  // === DELETE PRODUCT ===
-  const deleteProduct = (id: string) => {
-    const isConfirmed = window.confirm('Bạn chắc chắn muốn xóa sản phẩm này?');
-    if (isConfirmed) {
-      setProducts(prev => prev.filter(p => p.id !== id));
-    }
-  };
-
-  // === RESET PRODUCTS ===
-  const resetProducts = () => {
-    const isConfirmed = window.confirm('Bạn chắc chắn muốn reset tất cả sản phẩm về mặc định?');
-    if (isConfirmed) {
-      setProducts([...defaultProducts]);
-    }
-};
-  const addToCart = (productId: string, quantity: number) => {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-
-    setCart(prev => {
-      const exist = prev.find(i => i.id === productId);
-      if (exist) {
-        return prev.map(i => i.id === productId ? { ...i, quantity: i.quantity + quantity } : i);
+  const handleProductSubmit = async (data: any) => {
+    try {
+      if (data.id) {
+        await productApi.update(data.id, data);
+      } else {
+        await productApi.create(data);
       }
-      return [...prev, { ...product, quantity }];
-    });
+      loadProducts();
+      alert(data.id ? 'Cập nhật thành công!' : 'Thêm sản phẩm thành công!');
+    } catch (error) {
+      alert('Có lỗi xảy ra!');
+    }
   };
 
-  const updateCartQuantity = (id: string, change: number) => {
-    setCart(prev => prev.map(item => item.id === id ? { ...item, quantity: Math.max(1, item.quantity + change) } : item));
+  const deleteProduct = async (id: string) => {
+    if (!window.confirm('Bạn chắc chắn muốn xóa sản phẩm này?')) return;
+    try {
+      await productApi.delete(id);
+      loadProducts();
+    } catch (error) {
+      alert('Xóa thất bại!');
+    }
   };
 
-  const removeFromCart = (id: string) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+  const addToCart = async (productId: string, quantity: number) => {
+    try {
+      await cartApi.addToCart(productId, quantity);
+      loadCart();
+    } catch (error) {
+      alert('Không thể thêm vào giỏ hàng');
+    }
+  };
+
+  const updateCartQuantity = async (id: string, change: number) => {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+    
+    const newQuantity = Math.max(1, item.quantity + change);
+    try {
+      await cartApi.updateQuantity(id, newQuantity);
+      loadCart();
+    } catch (error) {
+      alert('Cập nhật số lượng thất bại');
+    }
+  };
+
+  const removeFromCart = async (id: string) => {
+    if (!window.confirm('Xóa sản phẩm khỏi giỏ hàng?')) return;
+    try {
+      await cartApi.removeFromCart(id);
+      loadCart();
+    } catch (error) {
+      alert('Xóa thất bại');
+    }
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <>
-      <Header isAdminMode={isAdminMode} cartCount={cartCount} onToggleAdmin={toggleAdminMode} onShowCart={() => setCurrentPage('cart')} />
+      <Header 
+        isAdminMode={isAdminMode} 
+        cartCount={cartCount} 
+        onToggleAdmin={toggleAdminMode} 
+        onShowCart={() => setCurrentPage('cart')} 
+      />
 
       <main className="container">
         {currentPage === 'home' && (
@@ -98,13 +138,19 @@ const App: React.FC = () => {
             {isAdminMode && (
               <div className="admin-toolbar">
                 <button className="btn-primary" onClick={openAddModal}>➕ Thêm sản phẩm</button>
-                <button className="btn-outline" onClick={resetProducts}>🔄 Reset mặc định</button>
               </div>
             )}
 
             <div className="products-grid">
               {products.map(product => (
-                <ProductCard key={product.id} product={product} isAdminMode={isAdminMode} onAddToCart={addToCart} onEdit={openEditModal} onDelete={deleteProduct} />
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  isAdminMode={isAdminMode} 
+                  onAddToCart={addToCart} 
+                  onEdit={openEditModal} 
+                  onDelete={deleteProduct} 
+                />
               ))}
             </div>
           </>
@@ -112,13 +158,20 @@ const App: React.FC = () => {
 
         {currentPage === 'cart' && (
           <>
-            <button className="btn-outline" onClick={() => setCurrentPage('home')}>← Quay lại mua sắm</button>
+            <button className="btn-outline" onClick={() => setCurrentPage('home')}>
+              ← Quay lại mua sắm
+            </button>
             <h2>Giỏ hàng của bạn</h2>
 
             <div className="cart-container">
               <div className="cart-items">
                 {cart.map(item => (
-                  <CartItem key={item.id} item={item} onUpdateQuantity={updateCartQuantity} onRemove={removeFromCart} />
+                  <CartItem 
+                    key={item.id} 
+                    item={item} 
+                    onUpdateQuantity={updateCartQuantity} 
+                    onRemove={removeFromCart} 
+                  />
                 ))}
                 {cart.length === 0 && <p>Giỏ hàng trống</p>}
               </div>
@@ -128,7 +181,12 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <ProductModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleProductSubmit} editingProduct={editingProduct} />
+      <ProductModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSubmit={handleProductSubmit} 
+        editingProduct={editingProduct} 
+      />
 
       <footer><p>© 2024 ShopCart. Tất cả quyền được bảo lưu.</p></footer>
     </>

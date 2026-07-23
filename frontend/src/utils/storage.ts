@@ -1,4 +1,4 @@
-import { Product, CartItem } from '../types';
+import { Product, CartItem } from '../types/products';
 
 const PRODUCTS_KEY = 'products';
 const CART_KEY = 'cart';
