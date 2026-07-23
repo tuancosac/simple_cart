@@ -1,5 +1,5 @@
 import React from 'react';
-import { Product } from '../types';
+import { Product } from '../types/products';
 import { formatPrice } from '../utils/formatPrice';
 
 interface ProductCardProps {
@@ -26,11 +26,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div className="product-card">
       <div className="product-image">
-        <img 
-          src={product.image} 
-          alt={product.name} 
-          onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/300'; }}
-        />
         {isAdminMode && (
           <div className="admin-overlay">
             <button className="btn-blue" onClick={() => onEdit?.(product.id)}>✏️</button>
@@ -39,8 +34,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         )}
       </div>
       <div className="product-content">
-        <div className="product-name">{product.name}</div>
-        <div className="product-description">{product.description}</div>
+        <div className="product-name">{product.productName}</div>
         <div className="product-price">{formatPrice(product.price)}</div>
         <div className="product-actions">
           <div className="quantity-control">
