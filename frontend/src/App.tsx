@@ -5,7 +5,7 @@ import ProductModal from './components/ProductModal';
 import CartItem from './components/CartItem';
 import OrderSummary from './components/OrderSummary';
 import { Product, CartItem as CartItemType } from './types/products';
-import { productApi, cartApi } from './services/api';
+import { productApi, cartApi, setAuthToken } from './services/api';
 
 const App: React.FC = () => {
   const [isAdminMode, setIsAdminMode] = useState(false);
@@ -15,12 +15,35 @@ const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'cart'>('home');
   const [loading, setLoading] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      setAuthToken(token);
+      setIsLoggedIn(true);
+    }
+    loadProducts();
+  }, []);
 
   // Load dữ liệu từ Backend
   useEffect(() => {
     loadProducts();
     loadCart();
   }, []);
+
+  const handleLoginSuccess = (token: string) => {
+    setIsLoggedIn(true);
+    loadCart();
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setCart([]);
+  };
 
   const loadProducts = async () => {
     try {
@@ -121,8 +144,11 @@ const App: React.FC = () => {
       <Header 
         isAdminMode={isAdminMode} 
         cartCount={cartCount} 
+        isLoggedIn={isLoggedIn}
         onToggleAdmin={toggleAdminMode} 
         onShowCart={() => setCurrentPage('cart')} 
+        onLoginClick={() => setIsLoginModalOpen(true)}
+        onLogout={logout}
       />
 
       <main className="container">
